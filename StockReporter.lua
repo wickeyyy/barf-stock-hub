@@ -539,24 +539,31 @@ local function sendWebhook(found, shopName)
         table.insert(lines, emoji.." **"..item.name.."** `"..item.rarity.."`"..priceStr..descStr)
     end
 
-    local ok, err = pcall(function()
-        HttpService:PostAsync(WEBHOOK_URL, HttpService:JSONEncode({
-            content = hasRare and "🚨 **Rare item in stock!**" or nil,
-            embeds = {{
-                title = (shopName=="Egg" and "🥚" or "⚙️").." Build a Ring Farm — "..shopName.." Shop",
-                description = "Live stock from in-game scan!",
-                color = topColor,
-                fields = {{
-                    name  = shopName.." Shop Items",
-                    value = #lines>0 and table.concat(lines,"\n") or "_Nothing found_",
-                    inline= false,
-                }},
-                footer    = {text="BARF Stock Hub • Live Scan"},
-                timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ"),
-            }}
-        }), Enum.HttpContentType.ApplicationJson, false)
+    local ok = false
+    local done = false
+    task.spawn(function()
+        ok = pcall(function()
+            HttpService:PostAsync(WEBHOOK_URL, HttpService:JSONEncode({
+                content = hasRare and "🚨 **Rare item in stock!**" or nil,
+                embeds = {{
+                    title = (shopName=="Egg" and "🥚" or "⚙️").." Build a Ring Farm — "..shopName.." Shop",
+                    description = "Live stock from in-game scan!",
+                    color = topColor,
+                    fields = {{
+                        name  = shopName.." Shop Items",
+                        value = #lines>0 and table.concat(lines,"\n") or "_Nothing found_",
+                        inline= false,
+                    }},
+                    footer    = {text="BARF Stock Hub • Live Scan"},
+                    timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ"),
+                }}
+            }), Enum.HttpContentType.ApplicationJson, false)
+        end)
+        done = true
     end)
-
+    -- Wait for the task to finish (max 5s)
+    local t = 0
+    while not done and t < 5 do task.wait(0.1) t = t + 0.1 end
     return ok
 end
 
@@ -696,21 +703,24 @@ testBtn.MouseButton1Click:Connect(function()
         return
     end
     testBtn.Text="⏳ Testing..."
-    local ok,err=pcall(function()
-        HttpService:PostAsync(WEBHOOK_URL, HttpService:JSONEncode({
-            embeds={{
-                title="✅ BARF Stock Hub — Webhook Test",
-                description="Your webhook is connected and working!",
-                color=3066993,
-                footer={text="BARF Stock Hub"},
-            }}
-        }), Enum.HttpContentType.ApplicationJson, false)
-    end)
-    task.delay(1, function()
-        testBtn.Text = ok and "✅ Webhook Works!" or "❌ Failed — check URL"
-        wbStatus.Text = ok and "✅ Connected!" or "❌ Error: "..tostring(err)
-        wbStatus.TextColor3 = ok and C.Green or C.Red
-        task.delay(3, function() testBtn.Text="🧪  Test Webhook" end)
+    local ok = false
+    task.spawn(function()
+        ok = pcall(function()
+            HttpService:PostAsync(WEBHOOK_URL, HttpService:JSONEncode({
+                embeds={{
+                    title="✅ BARF Stock Hub — Webhook Test",
+                    description="Your webhook is connected and working!",
+                    color=3066993,
+                    footer={text="BARF Stock Hub"},
+                }}
+            }), Enum.HttpContentType.ApplicationJson, false)
+        end)
+        task.delay(0.1, function()
+            testBtn.Text = ok and "✅ Webhook Works!" or "❌ Failed — check URL"
+            wbStatus.Text = ok and "✅ Connected!" or "❌ Error — invalid webhook?"
+            wbStatus.TextColor3 = ok and C.Green or C.Red
+            task.delay(3, function() testBtn.Text="🧪  Test Webhook" end)
+        end)
     end)
 end)
 
