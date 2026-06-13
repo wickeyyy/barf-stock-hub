@@ -304,35 +304,6 @@ local function buildEmbed(title, description, color, lines, itemName, footerText
     return embed
 end
 
--- ── Send watchlist ping (separate message per rare item with image) ────────────
-local function sendWatchlistPing(items, shopName)
-    for _, item in ipairs(items) do
-        if WATCHLIST[item.name] then
-            local r, price = item.rarity and item.rarity or getGearRarity(item.name)
-            if not price then _, price = getGearRarity(item.name) end
-            local color = RI[r] or RI.Common
-            local embed = {
-                title = "🚨 WATCHLIST ALERT — " .. item.name,
-                description = "**" .. item.name .. "** is now in stock!\n" ..
-                    (RE[r] or "⚪") .. " Rarity: `" .. (r or "?") .. "` · Price: " .. (price or "???") ..
-                    (item.stock and "\nStock: **" .. item.stock .. "**" or ""),
-                color = color,
-                footer = {text = "Build A Ring Farm Stock · " .. shopName},
-                timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ"),
-            }
-            if GEAR_IMAGES[item.name] then
-                embed.thumbnail = {url = GEAR_IMAGES[item.name]}
-            end
-            local payload = HttpService:JSONEncode({
-                content = "@here 🚨 **" .. item.name .. "** is in stock!",
-                embeds = {embed}
-            })
-            httpPost(WEBHOOK_URL, payload)
-            task.wait(0.5)
-        end
-    end
-end
-
 -- ── Scan functions ────────────────────────────────────────────────────────────
 local function scanGearShop()
     local results = {}
