@@ -27,18 +27,6 @@ local function httpRequest(data)
     elseif request then return request(data)
     else warn("[BARF] No HTTP function found!") end
 end
-
--- ── Watchlist (ping @here when these appear) ──────────────────────────────────
-local WATCHLIST = {
-    ["Super Fertilizer"]   = true,
-    ["Super Pet Treat"]    = true,
-    ["Radioactive Spray"]  = true,
-    ["Rainbow Spray"]      = true,
-    ["Cosmic Spray"]       = true,
-    ["Prismatic Fertilizer"] = true,
-    ["Bubblegum Spray"]    = true,
-    ["Fire Spray"]         = true,
-    ["Epic Egg"]           = true,
 }
 
 -- ── Item image map (rbxassetid → thumbnail URL) ───────────────────────────────
